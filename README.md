@@ -1,91 +1,103 @@
-# Student Placement Tracker
+# Student Placement Tracker (Full-Stack Engineering Showcase)
 
-A secure, full-stack, responsive Student Placement Tracker web application built using **React**, **TypeScript**, **Tailwind CSS v4**, **React Router**, **Node.js**, **Express**, and **MongoDB**. 
-
-It allows students, recruiters, and placement coordinators to record, track, and update job application statuses (Applied, OA Scheduled, OA Completed, Interview, Offer, Rejected), view dynamic statistics, search, and filter placements instantly with zero configuration.
+A full-stack, secure, production-ready Student Placement Tracker designed to demonstrate modern web engineering patterns, security practices, and clean code principles. This project showcases capability in building modular architectures using **React (TypeScript)**, **Tailwind CSS v4**, **Node.js (Express)**, and **MongoDB (Mongoose)**.
 
 ---
 
-## Architecture Overview
+## 🚀 Recruiter & Technical Interviewer Quick Summary
 
-The application follows a standard decoupled Client-Server architecture:
+This repository is built to showcase standard software engineering practices required for enterprise full-stack development:
+
+1. **Strict Type Safety**: TypeScript is implemented end-to-end (both backend and frontend) with strict compilation flags to eliminate runtime type issues.
+2. **User Data Isolation & Security**: Authenticated routes verify JWT Bearer tokens. All database queries check ownership constraints (`req.user._id`) to prevent cross-tenant data leaks or unauthorized resource modifications (validated via automated 403 Forbidden checks).
+3. **Database Resiliency (Reviewer-First UX)**: If remote MongoDB Atlas or local MongoDB service is offline, the backend automatically spins up an in-memory database (`MongoMemoryServer`) and pre-seeds it with demo accounts. This ensures that evaluators can run the project locally with **zero configuration**.
+4. **Clean Code & Lint Compliance**: The codebase compiles cleanly under ESLint and strict compiler parameters, containing zero dead code or unused dependencies.
+
+---
+
+## 📐 System Architecture
+
+The project follows a decoupled client-server architecture with state isolation:
 
 ```mermaid
 graph TD
-    subgraph Client [Frontend - Port 5173]
-        UI[React SPA - TypeScript]
+    subgraph Client [Frontend SPA - Port 5173]
+        UI[React 19 & TypeScript]
         CSS[Tailwind CSS v4]
-        Router[React Router]
-        Ctx[Auth Context / LocalStorage]
+        Router[React Router DOM v7]
+        State[Auth Context / LocalStorage]
     end
 
-    subgraph Server [Backend - Port 5001]
-        API[Express App - TypeScript]
-        JWT[JWT Auth Middleware]
-        Mongoose[Mongoose Schema Models]
+    subgraph Server [Backend REST API - Port 5001]
+        API[Express.js App - TypeScript]
+        Auth[JWT verification Middleware]
+        Mongoose[Mongoose ODM Schema Models]
     end
 
-    subgraph Database [Database Layer]
+    subgraph Storage [Data Store Layer]
         Atlas[(MongoDB Atlas)]
-        MemDB[(MongoMemoryServer Fallback)]
+        Memory[(MongoMemoryServer Fallback)]
     end
 
-    UI -->|API Requests / JWT Bearer| API
-    API -->|Query / Save| Mongoose
-    Mongoose -->|Configured MONGODB_URI| Atlas
-    Mongoose -->|Fallback if Offline| MemDB
+    UI -->|JSON payloads / Authorization Bearer| API
+    API -->|Validates & Extracts Context| Auth
+    Auth -->|User Ownership Checks| Mongoose
+    Mongoose -->|Connects to remote cluster| Atlas
+    Mongoose -->|Fallback Seeding| Memory
 ```
 
 ---
 
-## Features
+## 🛠️ Tech Stack & Key Concepts
 
-- **JWT Authentication**: User registration, login, session persistence via `localStorage`, and protected route guards.
-- **Dynamic Dashboard Metrics**: Real-time aggregation of total applications, interviews, offers, and rejections.
-- **CRUD Placements Management**: Full support for logging new applications, editing parameters (role, CTC, status, notes), and deleting entries.
-- **Search & Advanced Filters**: Combine keyword searching (by company name or job role) with status filtering dynamically.
-- **Resilient Database Fallback**: Automatically spins up an in-memory MongoDB database server (`MongoMemoryServer`) and pre-seeds it with demo accounts if local MongoDB or MongoDB Atlas credentials are not available.
-- **Responsive Premium Design**: Sleek slate-mode aesthetics with vibrant indigo indicators, custom role badges, and clean feedback layouts.
+### Backend (API Server)
+- **Node.js & Express.js**: Built with TypeScript, structured with clear separation of routes, models, middlewares, and controllers.
+- **MongoDB & Mongoose**: Utilizes schema indexes, unique keys, relational reference queries, and pre-save hooks (for password hashing using `bcryptjs`).
+- **JSON Web Tokens (JWT)**: Secure stateless sessions with a 30-day expiration window.
 
----
-
-## Tech Stack
-
-### Frontend
-- **Framework**: React 19 (TypeScript)
-- **Styling**: Tailwind CSS v4 (using `@tailwindcss/vite` plugin)
-- **Routing**: React Router DOM v7
-- **Icons**: Lucide React
-
-### Backend
-- **Platform**: Node.js (TypeScript)
-- **Web Framework**: Express.js
-- **Database**: MongoDB Atlas / Mongoose ODM
-- **Security**: JWT (`jsonwebtoken`), Password Hashing (`bcryptjs`), CORS
-- **Dev Tooling**: `ts-node-dev` (automatic reload watcher), `typescript` compiler
+### Frontend (User Interface)
+- **React (Vite)**: Standard hooks (`useState`, `useEffect`, `useCallback`) are combined with React Context API to manage user sessions and state.
+- **Tailwind CSS v4**: Built using the official `@tailwindcss/vite` plugin, importing styling variables directly into CSS without legacy JS config files.
+- **Lucide React**: Clean vector iconography representing application states, calendars, and action buttons.
 
 ---
 
-## API Endpoints
+## 🔒 Security & Data Isolation Details
 
-All endpoints below (except Registration and Login) require a header parameter of `Authorization: Bearer <JWT_TOKEN>`.
+All placement applications are tied to the creator's user ID. Below is an overview of how user boundaries are enforced at the API controller layer:
 
-| Method | Endpoint | Access | Description |
+- **Verification Hook**:
+  Before any modification or delete operation is performed, the controller queries the object and validates ownership:
+  ```typescript
+  if (application.userId.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized to modify this application' });
+  }
+  ```
+- **Read Isolation**:
+  Retrieval queries filter directly by the active user context: `Application.find({ userId: req.user._id })`, ensuring a user never leaks private job logs to other logged-in students.
+
+---
+
+## 📋 RESTful API Endpoint Specifications
+
+All paths under `/api/applications` require passing a valid JWT token via the `Authorization: Bearer <token>` header.
+
+| Method | Route Path | Access | Data Validation / Logic |
 | :--- | :--- | :--- | :--- |
-| **POST** | `/api/auth/register` | Public | Register a new user (role: student, recruiter, or admin) |
-| **POST** | `/api/auth/login` | Public | Authenticate credentials and get a JWT token |
-| **GET** | `/api/auth/me` | Protected | Fetch the profile details of the logged-in user |
-| **POST** | `/api/applications` | Protected | Log a new job placement application |
-| **GET** | `/api/applications` | Protected | Retrieve all applications belonging to the logged-in user |
-| **GET** | `/api/applications/:id` | Protected | Fetch details of a single application (with ownership check) |
-| **PUT** | `/api/applications/:id` | Protected | Update parameters of a specific application (with ownership check) |
-| **DELETE** | `/api/applications/:id` | Protected | Remove an application from the tracker (with ownership check) |
+| **POST** | `/api/auth/register` | Public | Validates email format, registers name, email, password (hashed), and sets role (`student`, `recruiter`, or `admin`). |
+| **POST** | `/api/auth/login` | Public | Compares credentials using `bcrypt` and returns user profile details with a JWT token. |
+| **GET** | `/api/auth/me` | Protected | Retrieves current user metadata from token context. |
+| **POST** | `/api/applications` | Protected | Creates a placement application (company name, role, CTC package, date, and status). |
+| **GET** | `/api/applications` | Protected | Fetches all job logs belonging to the user. |
+| **GET** | `/api/applications/:id` | Protected | Fetches a single log after confirming database ownership. |
+| **PUT** | `/api/applications/:id` | Protected | Updates fields (with status enum check) after checking user ownership. |
+| **DELETE** | `/api/applications/:id` | Protected | Deletes the record after checking user ownership. |
 
 ---
 
-## Environment Variables
+## 📦 Environment Configurations
 
-Create a `.env` file in the `backend/` directory to configure the ports and databases:
+A configuration template is situated at `backend/.env`:
 
 ```env
 PORT=5001
@@ -93,59 +105,38 @@ MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/placem
 JWT_SECRET=supersecretkey1234567890jwtsecret
 ```
 
-> [!NOTE]
-> If `MONGODB_URI` is omitted or points to an inactive local port, the backend will automatically spin up an in-memory database and seed it with demo records for zero-config previewing.
+*Note: If local MongoDB or MongoDB Atlas URIs are not configured, the backend automatically transitions to an in-memory database and auto-seeds it with demo values.*
 
 ---
 
-## Getting Started
+## 🚀 Local Deployment and Demo Preview
 
-### 1. Clone & Set Up Directory
-Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+To test the application locally without creating accounts:
 
-### 2. Configure and Run Backend
+### 1. Initialize and Start Backend
 ```bash
 cd backend
 npm install
 npm run dev
 ```
-The server starts on `http://localhost:5001`.
+The server will boot on `http://localhost:5001` and output logs verifying that it has connected to the database.
 
-### 3. Configure and Run Frontend
-Open a new terminal session:
+### 2. Initialize and Start Frontend
+In a separate terminal panel:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-The Vite development server starts on `http://localhost:5173`. Access the tracker in your browser.
+The UI loads on `http://localhost:5173`.
 
----
+### 3. Log In with Demo Credentials
+Because the database auto-seeds on connection fallbacks, you can test the system immediately with:
+- **Email**: `demo@university.edu`
+- **Password**: `password123`
 
-## Testing Out of the Box (Demo Data)
-
-To make previewing instant, the database is auto-seeded with sample records when launching in-memory. You can log in immediately with:
-
-- **Demo Email**: `demo@university.edu`
-- **Demo Password**: `password123`
-
-To seed an external database (Atlas/Local MongoDB) via CLI, configure the `MONGODB_URI` in `backend/.env` and execute:
+To populate your custom MongoDB database with this sample set via CLI, configure your environment variables and execute:
 ```bash
 cd backend
 npm run seed
 ```
-
----
-
-## Screenshots Section
-
-*Placeholder for visual application screens:*
-
-#### 1. Registration Screen
-A clean card form validating passwords, name lengths, and emails with role selection (Student, Recruiter, Admin).
-
-#### 2. Authentication Login Screen
-Clean glassmorphic dark-theme container prompting credentials with live validation and error banners.
-
-#### 3. Student Placement Dashboard
-Dynamic statistics panels counting active applications, offers, and rejections alongside search fields, status filters, and the placement calendars.
