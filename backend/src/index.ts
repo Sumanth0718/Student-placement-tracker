@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
+import applicationRoutes from './routes/applicationRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/applications', applicationRoutes);
 
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the Student Placement Tracker API' });
