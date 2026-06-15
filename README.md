@@ -1,4 +1,4 @@
-# Student Placement Tracker (Full-Stack Engineering Showcase)
+# Student Placement Tracker (MERN stack)
 
 A full-stack, secure, production-ready Student Placement Tracker designed to demonstrate modern web engineering patterns, security practices, and clean code principles. This project showcases capability in building modular architectures using **React (TypeScript)**, **Tailwind CSS v4**, **Node.js (Express)**, and **MongoDB (Mongoose)**.
 
