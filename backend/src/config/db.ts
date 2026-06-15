@@ -30,6 +30,10 @@ export const connectDB = async (): Promise<void> => {
       console.log(`In-memory database initialized at: ${uri}`);
       const conn = await mongoose.connect(uri);
       console.log(`MongoDB Connected (Memory): ${conn.connection.host}/${conn.connection.name}`);
+      
+      // Auto seed in-memory database for instant testing
+      const { seedDemoData } = await import('./seedData');
+      await seedDemoData();
     }
   } catch (error) {
     console.error(`Error connecting to MongoDB: ${(error as Error).message}`);
