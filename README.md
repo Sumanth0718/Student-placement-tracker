@@ -140,3 +140,13 @@ To populate your custom MongoDB database with this sample set via CLI, configure
 cd backend
 npm run seed
 ```
+
+---
+
+## 🖼️ Screenshots
+
+#### 1. Authentication Login Screen
+![Login Screen](docs/screenshots/login.png)
+
+#### 2. Student Placement Dashboard
+![Student Placement Dashboard](docs/screenshots/dashboard.png)
